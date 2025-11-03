@@ -1,0 +1,215 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String        @id @default(uuid())
+  simpleId      String        @unique
+  email         String        @unique
+  passwordHash  String
+  firstName     String?
+  phone         String?
+  avatar        String?
+  balance       Decimal       @default(0) @db.Decimal(10, 2)
+  role          UserRole      @default(USER)
+  status        UserStatus    @default(ACTIVE)
+  emailVerified Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  invoices      Invoice[]
+  payments      Payment[]
+  sessions      Session[]
+  subscription  Subscription?
+  services      UserService[]
+
+  @@map("users")
+}
+
+model Plan {
+  id            String         @id @default(uuid())
+  name          String         @unique
+  description   String?
+  price         Decimal        @db.Decimal(10, 2)
+  billingPeriod BillingPeriod
+  features      Json
+  maxServices   Int            @default(1)
+  maxUsers      Int            @default(1)
+  isActive      Boolean        @default(true)
+  trialDays     Int            @default(0)
+  sortOrder     Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  planServices  PlanService[]
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                 String             @id @default(uuid())
+  userId             String             @unique
+  planId             String
+  status             SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean            @default(false)
+  trialEnd           DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  plan               Plan               @relation(fields: [planId], references: [id])
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model Service {
+  id              String        @id @default(uuid())
+  name            String        @unique
+  slug            String        @unique
+  description     String?
+  basePrice       Decimal       @db.Decimal(10, 2)
+  icon            String?
+  category        String?
+  isActive        Boolean       @default(true)
+  rateLimitPerDay Int?
+  metadata        Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  planServices    PlanService[]
+  userServices    UserService[]
+
+  @@map("services")
+}
+
+model PlanService {
+  id        String   @id @default(uuid())
+  planId    String
+  serviceId String
+  included  Boolean  @default(true)
+  limit     Int?
+  createdAt DateTime @default(now())
+  plan      Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, serviceId])
+  @@map("plan_services")
+}
+
+model UserService {
+  id          String    @id @default(uuid())
+  userId      String
+  serviceId   String
+  accessLevel String    @default("basic")
+  usageCount  Int       @default(0)
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  service     Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, serviceId])
+  @@map("user_services")
+}
+
+model Invoice {
+  id          String        @id @default(uuid())
+  userId      String
+  amount      Decimal       @db.Decimal(10, 2)
+  currency    String        @default("RUB")
+  status      InvoiceStatus @default(PENDING)
+  description String?
+  dueDate     DateTime
+  paidAt      DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments    Payment[]
+
+  @@map("invoices")
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  invoiceId     String
+  userId        String
+  amount        Decimal       @db.Decimal(10, 2)
+  currency      String        @default("RUB")
+  paymentMethod PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  transactionId String?       @unique
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  invoice       Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum BillingPeriod {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  LIFETIME
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  TRIALING
+  PAUSED
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  YOOKASSA
+  CLOUDPAYMENTS
+  ROBOKASSA
+  BANK_CARD
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
