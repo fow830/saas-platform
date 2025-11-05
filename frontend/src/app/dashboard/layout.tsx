@@ -16,6 +16,7 @@ export default function DashboardLayout({
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -116,16 +117,25 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 bg-gray-900 text-white transform transition-all duration-300 ease-in-out w-64 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } lg:translate-x-0 ${
+          sidebarCollapsed ? 'lg:w-16' : 'lg:w-64'
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-800">
-            <Link href="/dashboard" className="text-xl font-semibold tracking-tight">
-              SaaS Platform
-            </Link>
+          <div className="flex items-center justify-between h-16 px-4 lg:px-6 border-b border-gray-800">
+            {!sidebarCollapsed && (
+              <Link href="/dashboard" className="text-xl font-semibold tracking-tight truncate">
+                SaaS Platform
+              </Link>
+            )}
+            {sidebarCollapsed && (
+              <Link href="/dashboard" className="text-xl font-semibold tracking-tight">
+                SP
+              </Link>
+            )}
             <button
               onClick={() => setSidebarOpen(false)}
               className="lg:hidden text-gray-400 hover:text-white"
@@ -148,20 +158,21 @@ export default function DashboardLayout({
                     isActive
                       ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/50'
                       : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                  }`}
+                  } ${sidebarCollapsed ? 'lg:justify-center' : ''}`}
+                  title={sidebarCollapsed ? item.label : undefined}
                 >
-                  <span className={`mr-3 ${isActive ? 'text-white' : 'text-gray-400'}`}>
+                  <span className={`${isActive ? 'text-white' : 'text-gray-400'} ${sidebarCollapsed ? 'lg:mr-0' : 'mr-3'}`}>
                     {item.icon}
                   </span>
-                  {item.label}
+                  <span className={`${sidebarCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
                 </Link>
               );
             })}
           </nav>
 
           {/* User section */}
-          <div className="px-4 py-4 border-t border-gray-800">
-            <div className="flex items-center justify-between mb-3">
+          <div className={`px-4 py-4 border-t border-gray-800 ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
+            <div className={`flex items-center justify-between mb-3 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">{user?.email}</p>
                 <p className="text-xs text-gray-400 truncate">
@@ -171,12 +182,13 @@ export default function DashboardLayout({
             </div>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-300 bg-gray-800 rounded-lg hover:bg-gray-700 hover:text-white transition-colors"
+              className={`w-full flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-300 bg-gray-800 rounded-lg hover:bg-gray-700 hover:text-white transition-colors ${sidebarCollapsed ? 'lg:px-2' : ''}`}
+              title={sidebarCollapsed ? 'Выйти' : undefined}
             >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 lg:mr-0 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              Выйти
+              <span className={`${sidebarCollapsed ? 'lg:hidden' : ''}`}>Выйти</span>
             </button>
           </div>
         </div>
@@ -191,18 +203,36 @@ export default function DashboardLayout({
       )}
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col lg:pl-64">
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'}`}>
         {/* Top bar */}
         <header className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="hidden lg:inline-flex items-center justify-center w-9 h-9 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition"
+                title={sidebarCollapsed ? 'Развернуть сайдбар' : 'Свернуть сайдбар'}
+                aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                {sidebarCollapsed ? (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                )}
+              </button>
+            </div>
             <div className="flex-1 lg:hidden"></div>
             <div className="hidden lg:flex items-center gap-4">
               <span className="text-sm text-gray-600">{user?.email}</span>

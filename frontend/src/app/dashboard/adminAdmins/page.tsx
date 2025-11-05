@@ -330,7 +330,9 @@ export default function AdminAdminsPage() {
                 admins.map((admin) => (
                   <tr key={admin.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
-                      {admin.simpleId || '—'}
+                      {admin.simpleId && /^[0-9]+$/.test(admin.simpleId)
+                        ? admin.id
+                        : (admin.simpleId || admin.id)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {admin.email}

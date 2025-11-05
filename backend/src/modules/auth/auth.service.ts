@@ -17,13 +17,13 @@ export class AuthService {
   ) {}
 
   private async generateSimpleId(): Promise<string> {
-    // Find the maximum simpleId using raw query to handle ordering by numeric value
+    // Find the maximum numeric simpleId; ignore non-numeric values (e.g., UUIDs for admins)
     try {
       const result = await this.prisma.$queryRaw<Array<{ simpleId: string }>>`
-        SELECT "simpleId" 
-        FROM "users" 
-        WHERE "simpleId" IS NOT NULL 
-        ORDER BY CAST("simpleId" AS INTEGER) DESC 
+        SELECT "simpleId"
+        FROM "users"
+        WHERE "simpleId" IS NOT NULL AND "simpleId" ~ '^[0-9]+$'
+        ORDER BY CAST("simpleId" AS INTEGER) DESC
         LIMIT 1
       `;
 
